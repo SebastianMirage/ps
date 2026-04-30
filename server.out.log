@@ -1,0 +1,10 @@
+
+> ps-test@1.0.0 dev
+> nodemon --exec tsx index.ts
+
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: ts,json[39m
+[32m[nodemon] starting `tsx index.ts`[39m
+Servidor escuchando en el puerto 3000

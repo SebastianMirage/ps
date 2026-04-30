@@ -6,7 +6,6 @@ const router = express.Router();
 const storage = multer.memoryStorage(); // Definir dónde se va a almacenar
 const upload = multer({storage: storage}); // Middleware
 
-
 router.post("/file/sala-concierto", upload.single("file"), salaConciertoController);
 router.post("/file/catedral", upload.single("file"), catedralController);
 router.post("/file/cuarto", upload.single("file"), cuartoController);

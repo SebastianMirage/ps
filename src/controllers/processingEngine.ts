@@ -44,16 +44,16 @@ const salaConciertoController = (req: Request, res: Response) => {
 
     fs.copyFileSync(outputPath, savedFilePath);
 
-    res.setHeader("Content-type", "audio/wav");
+    res.setHeader("Content-Type", "audio/wav");
     res.setHeader('Content-Disposition', 'inline; filename="procesado.wav"');
-    res.sendFile(path.resolve(outputPath));
+    return res.sendFile(savedFilePath);
 
-    return res.json({
-      originalName: file.originalname,
-      mimeName: file.mimetype,
-      size: file.size,
-      savedFileName,
-    });
+    // return res.json({
+    //   originalName: file.originalname,
+    //   mimeName: file.mimetype,
+    //   size: file.size,
+    //   savedFileName,
+    // });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ error: "No se pudo procesar el audio" });
