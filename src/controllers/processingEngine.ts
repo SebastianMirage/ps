@@ -44,6 +44,10 @@ const salaConciertoController = (req: Request, res: Response) => {
 
     fs.copyFileSync(outputPath, savedFilePath);
 
+    res.setHeader("Content-type", "audio/wav");
+    res.setHeader('Content-Disposition', 'inline; filename="procesado.wav"');
+    res.sendFile(path.resolve(outputPath));
+
     return res.json({
       originalName: file.originalname,
       mimeName: file.mimetype,
