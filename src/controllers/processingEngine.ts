@@ -114,7 +114,50 @@ const catedralController = (req: Request, res: Response) => {
 };
 
 const cuartoController = (req: Request, res: Response) => {
-  res.json("Desde el cuarto");
+  const file = req.file;
+  const matlabDir = path.resolve(process.cwd(), "src", "matlab", "cuarto");
+  const executablePath = path.resolve(matlabDir, "ir_cuarto_pequeno.exe");
+
+  if (!file) {
+    return res.status(400).json({ error: "Sin archivo" });
+  }
+
+  if (file.mimetype !== "audio/wave") {
+    return res.status(400).json({ error: "Formato incorrecto" });
+  }
+
+  try {
+    if (!fs.existsSync(executablePath)) {
+      throw new Error(`Ejecutable no encontrado ${executablePath}`);
+    }
+
+    fs.writeFileSync(tempPath, file.buffer);
+
+    execFileSync(executablePath, [tempPath, outputPath], { cwd: matlabDir });
+
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    const savedFileName = `${path.parse(file.originalname).name}-${Date.now()}.wav`;
+    const savedFilePath = path.join(uploadsDir, savedFileName);
+
+    fs.copyFileSync(outputPath, savedFilePath);
+
+    return res.json({
+      originalName: file.originalname,
+      mimeName: file.mimetype,
+      size: file.size,
+      savedFileName,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: "No se pudo procesar el audio" });
+  } finally {
+    if (fs.existsSync(tempPath)) {
+      fs.unlinkSync(tempPath);
+    }
+    if (fs.existsSync(outputPath)) {
+      fs.unlinkSync(outputPath);
+    }
+  }
 };
 
 const customIRController = (req: Request, res: Response) => {
