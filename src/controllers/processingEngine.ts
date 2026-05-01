@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { execFileSync } from "node:child_process";
+import getWavValidationError from "../helpers/Validaciones.js";
 import path from "node:path";
 import fs from "node:fs";
 import os from "node:os";
@@ -23,8 +24,10 @@ const salaConciertoController = (req: Request, res: Response) => {
     return res.status(400).json({ error: "Sin archivo" });
   }
 
-  if (file.mimetype !== "audio/wave") {
-    return res.status(400).json("Formato incorrecto");
+  const validationError = getWavValidationError(file);
+
+  if (validationError) {
+    return res.status(400).json(validationError);
   }
 
   //Escribe un archivo temporal en la dirección tempPath
@@ -45,7 +48,7 @@ const salaConciertoController = (req: Request, res: Response) => {
     fs.copyFileSync(outputPath, savedFilePath);
 
     res.setHeader("Content-Type", "audio/wav");
-    res.setHeader('Content-Disposition', 'inline; filename="procesado.wav"');
+    res.setHeader("Content-Disposition", 'inline; filename="procesado.wav"');
     return res.sendFile(savedFilePath);
 
     // return res.json({
@@ -73,11 +76,13 @@ const catedralController = (req: Request, res: Response) => {
   const executablePath = path.resolve(matlabDir, "ir_catedral.exe");
 
   if (!file) {
-    res.status(400).json({ error: "Sin archivo" });
+    return res.status(400).json({ error: "Sin archivo" });
   }
 
-  if (file?.mimetype !== "audio/wave") {
-    return res.status(400).json("Formato incorrecto");
+  const validationError = getWavValidationError(file);
+
+  if (validationError) {
+    return res.status(400).json(validationError);
   }
 
   // Escribe el audio en el path temporal
@@ -98,12 +103,10 @@ const catedralController = (req: Request, res: Response) => {
 
     fs.copyFileSync(outputPath, savedFilePath);
 
-    return res.json({
-      originalName: file.originalname,
-      mimeName: file.mimetype,
-      size: file.size,
-      savedFileName,
-    });
+    res.setHeader("Content-Type", "audio/wav");
+    res.setHeader("Content-Disposition", 'inline; filename="procesado.wav"');
+    return res.sendFile(savedFilePath);
+    
   } catch (error) {
     console.log(error);
     return res.status(500).json({ error: "No se pudo procesar el audio" });
@@ -126,8 +129,10 @@ const cuartoController = (req: Request, res: Response) => {
     return res.status(400).json({ error: "Sin archivo" });
   }
 
-  if (file.mimetype !== "audio/wave") {
-    return res.status(400).json({ error: "Formato incorrecto" });
+  const validationError = getWavValidationError(file);
+
+  if (validationError) {
+    return res.status(400).json(validationError);
   }
 
   try {
@@ -145,12 +150,10 @@ const cuartoController = (req: Request, res: Response) => {
 
     fs.copyFileSync(outputPath, savedFilePath);
 
-    return res.json({
-      originalName: file.originalname,
-      mimeName: file.mimetype,
-      size: file.size,
-      savedFileName,
-    });
+    res.setHeader("Content-Type", "audio/wav");
+    res.setHeader("Content-Disposition", 'inline; filename="procesado.wav"');
+    return res.sendFile(savedFilePath);
+
   } catch (error) {
     console.log(error);
     return res.status(500).json({ error: "No se pudo procesar el audio" });
