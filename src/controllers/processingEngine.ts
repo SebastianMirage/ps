@@ -7,8 +7,6 @@ import os from "node:os";
 
 //Rutas y directorios
 const uploadsDir = path.resolve(process.cwd(), "uploads");
-const outputPath = path.join(os.tmpdir(), `audio-out-${Date.now()}.wav`);
-const tempPath = path.join(os.tmpdir(), `audio-${Date.now()}.wav`);
 
 const salaConciertoController = (req: Request, res: Response) => {
   const file = req.file;
@@ -19,6 +17,8 @@ const salaConciertoController = (req: Request, res: Response) => {
     "sala-concierto",
   );
   const executablePath = path.join(matlabDir, "ir_sala_conciertos.exe");
+  const outputPath = path.join(os.tmpdir(), `audio-out-${Date.now()}.wav`);
+  const tempPath = path.join(os.tmpdir(), `audio-${Date.now()}.wav`);
 
   if (!file) {
     return res.status(400).json({ error: "Sin archivo" });
@@ -74,6 +74,8 @@ const catedralController = (req: Request, res: Response) => {
   const file = req.file;
   const matlabDir = path.resolve(process.cwd(), "src", "matlab", "catedral");
   const executablePath = path.resolve(matlabDir, "ir_catedral.exe");
+  const outputPath = path.join(os.tmpdir(), `audio-out-${Date.now()}.wav`);
+  const tempPath = path.join(os.tmpdir(), `audio-${Date.now()}.wav`);
 
   if (!file) {
     return res.status(400).json({ error: "Sin archivo" });
@@ -106,7 +108,6 @@ const catedralController = (req: Request, res: Response) => {
     res.setHeader("Content-Type", "audio/wav");
     res.setHeader("Content-Disposition", 'inline; filename="procesado.wav"');
     return res.sendFile(savedFilePath);
-    
   } catch (error) {
     console.log(error);
     return res.status(500).json({ error: "No se pudo procesar el audio" });
@@ -124,6 +125,8 @@ const cuartoController = (req: Request, res: Response) => {
   const file = req.file;
   const matlabDir = path.resolve(process.cwd(), "src", "matlab", "cuarto");
   const executablePath = path.resolve(matlabDir, "ir_cuarto_pequeno.exe");
+  const outputPath = path.join(os.tmpdir(), `audio-out-${Date.now()}.wav`);
+  const tempPath = path.join(os.tmpdir(), `audio-${Date.now()}.wav`);
 
   if (!file) {
     return res.status(400).json({ error: "Sin archivo" });
@@ -153,7 +156,6 @@ const cuartoController = (req: Request, res: Response) => {
     res.setHeader("Content-Type", "audio/wav");
     res.setHeader("Content-Disposition", 'inline; filename="procesado.wav"');
     return res.sendFile(savedFilePath);
-
   } catch (error) {
     console.log(error);
     return res.status(500).json({ error: "No se pudo procesar el audio" });
@@ -168,7 +170,54 @@ const cuartoController = (req: Request, res: Response) => {
 };
 
 const customIRController = (req: Request, res: Response) => {
-  res.json("Desde la IR custom");
+  const file = req.file;
+  const matlabDir = path.resolve(process.cwd(), "src", "matlab", "ir-custom");
+  const executablePath = path.resolve(matlabDir, "ir_custom.exe");
+  const irCustom = path.resolve(matlabDir, "ir_custom.wav");
+  const outputPath = path.join(os.tmpdir(), `audio-out-${Date.now()}.wav`);
+  const tempPath = path.join(os.tmpdir(), `audio-${Date.now()}.wav`);
+
+  if (!file) {
+    return res.status(400).json({ error: "Sin archivo" });
+  }
+
+  const validationError = getWavValidationError(file);
+
+  if (validationError) {
+    return res.status(400).json({ error: "Formato inválido" });
+  }
+
+  try {
+    if (!fs.existsSync(executablePath)) {
+      throw new Error(`Ejecutable no encontrado ${executablePath}`);
+    }
+
+    //Copiar archivo
+    fs.writeFileSync(tempPath, file.buffer);
+
+    //Ejecutar
+    execFileSync(executablePath, [tempPath, irCustom, outputPath]);
+
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    const savedFileName = `${path.parse(file.originalname).name}-${Date.now()}.wav`;
+    const savedFilePath = path.join(uploadsDir, savedFileName);
+
+    fs.copyFileSync(outputPath, savedFilePath);
+
+    res.setHeader("Content-Type", "audio/wav");
+    res.setHeader("Content-Disposition", 'inline; filename="procesado.wav"');
+    return res.sendFile(savedFilePath);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: "No se pudo procesar el audio" });
+  } finally {
+    if (fs.existsSync(tempPath)) {
+      fs.unlinkSync(tempPath);
+    }
+    if (fs.existsSync(outputPath)) {
+      fs.unlinkSync(outputPath);
+    }
+  }
 };
 
 export {

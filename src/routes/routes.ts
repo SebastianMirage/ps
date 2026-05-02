@@ -9,6 +9,6 @@ const upload = multer({storage: storage}); // Middleware
 router.post("/file/sala-concierto", upload.single("file"), salaConciertoController);
 router.post("/file/catedral", upload.single("file"), catedralController);
 router.post("/file/cuarto", upload.single("file"), cuartoController);
-router.post("/file/custom-ir", upload.single("file"), customIRController);
+router.post("/file/lab", upload.single("file"), customIRController);
 
 export default router;
