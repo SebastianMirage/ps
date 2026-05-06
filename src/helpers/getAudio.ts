@@ -1,7 +1,11 @@
 import getWavValidationError from "../helpers/Validaciones.js";
-import fs from "node:fs";
+import fs from "node:fs/promises";
 import path from "node:path";
-import { execFileSync } from "node:child_process";
+import { constants } from "node:fs";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+
+const execFileAsync = promisify(execFile);
 
 interface getAudioInterface {
   file: Express.Multer.File | undefined;
@@ -14,7 +18,7 @@ interface getAudioInterface {
   ir: string;
 }
 
-const getAudio = ({
+const getAudio = async ({
   file,
   tempPath,
   executablePath,
@@ -22,12 +26,13 @@ const getAudio = ({
   matlabDir,
   requestID,
   uploadsDir,
-  ir
+  ir,
 }: getAudioInterface) => {
   if (!file) {
     throw new Error("Sin archivo");
   }
 
+  //Validaciones
   const validationError = getWavValidationError(file);
   if (validationError) {
     throw new Error(validationError.error);
@@ -36,34 +41,35 @@ const getAudio = ({
   //Procesa el audio
   try {
     //Escribe un archivo temporal en la dirección tempPath
-    fs.writeFileSync(tempPath, file.buffer);
+    await fs.writeFile(tempPath, file.buffer);
 
-    if (!fs.existsSync(executablePath)) {
+    try {
+      //Comprueba el path del ejecutable
+      await fs.access(executablePath, constants.F_OK);
+    } catch (error) {
       throw new Error(`No se encontró el ejecutable: ${executablePath}`);
     }
 
     //Ejecución
-    execFileSync(executablePath, [tempPath, ir, outputPath], { cwd: matlabDir });
+    await execFileAsync(executablePath, [tempPath, ir, outputPath], {
+      cwd: matlabDir,
+    });
 
     //Crear directorios
-    fs.mkdirSync(uploadsDir, { recursive: true });
+    await fs.mkdir(uploadsDir, { recursive: true });
     const savedFileName = `${path.parse(file.originalname).name}-${requestID}.wav`;
     const savedFilePath = path.join(uploadsDir, savedFileName);
 
     //Copiar archivo en un directorio permanente
-    fs.copyFileSync(outputPath, savedFilePath);
+    await fs.copyFile(outputPath, savedFilePath);
 
     return { savedFileName, savedFilePath };
   } catch (error) {
     console.log(error);
     throw new Error("No se pudo procesar el audio");
   } finally {
-    if (fs.existsSync(tempPath)) {
-      fs.unlinkSync(tempPath);
-    }
-    if (fs.existsSync(outputPath)) {
-      fs.unlinkSync(outputPath);
-    }
+    await fs.unlink(tempPath).catch(() => {});
+    await fs.unlink(outputPath).catch(() => {});
   }
 };
 

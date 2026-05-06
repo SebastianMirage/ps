@@ -3,7 +3,7 @@ import path from "node:path";
 import os from "node:os";
 import { v4 as uuidv4 } from "uuid";
 import getAudio from "../helpers/getAudio.js";
-import fs from "node:fs"
+import fs from "node:fs/promises"
 
 interface FilesType {
   file?: Express.Multer.File[];
@@ -13,7 +13,7 @@ interface FilesType {
 //Rutas y directorios
 const uploadsDir = path.resolve(process.cwd(), "uploads");
 
-const salaConciertoController = (req: Request, res: Response) => {
+const salaConciertoController = async(req: Request, res: Response) => {
   const file = req.file;
   const requestID = uuidv4();
   const matlabDir = path.resolve(process.cwd(), "src", "matlab", "ir");
@@ -23,7 +23,7 @@ const salaConciertoController = (req: Request, res: Response) => {
   const tempPath = path.join(os.tmpdir(), `audio-${requestID}.wav`);
 
   try {
-    const result = getAudio({
+    const result = await getAudio({
       file,
       tempPath,
       executablePath,
@@ -44,7 +44,7 @@ const salaConciertoController = (req: Request, res: Response) => {
   }
 };
 
-const catedralController = (req: Request, res: Response) => {
+const catedralController = async(req: Request, res: Response) => {
   const file = req.file;
   const requestID = uuidv4();
   const matlabDir = path.resolve(process.cwd(), "src", "matlab", "ir");
@@ -54,7 +54,7 @@ const catedralController = (req: Request, res: Response) => {
   const tempPath = path.join(os.tmpdir(), `audio-${requestID}.wav`);
 
   try {
-    const result = getAudio({
+    const result = await getAudio({
       file,
       tempPath,
       executablePath,
@@ -75,7 +75,7 @@ const catedralController = (req: Request, res: Response) => {
   }
 };
 
-const cuartoController = (req: Request, res: Response) => {
+const cuartoController = async(req: Request, res: Response) => {
   const file = req.file;
   const requestID = uuidv4();
   const matlabDir = path.resolve(process.cwd(), "src", "matlab", "ir");
@@ -85,7 +85,7 @@ const cuartoController = (req: Request, res: Response) => {
   const tempPath = path.join(os.tmpdir(), `audio-${requestID}.wav`);
 
   try {
-    const result = getAudio({
+    const result = await getAudio({
       file,
       tempPath,
       executablePath,
@@ -106,7 +106,7 @@ const cuartoController = (req: Request, res: Response) => {
   }
 };
 
-const labIRController = (req: Request, res: Response) => {
+const labIRController = async (req: Request, res: Response) => {
   const file = req.file;
   const requestID = uuidv4();
   const matlabDir = path.resolve(process.cwd(), "src", "matlab", "ir");
@@ -116,7 +116,7 @@ const labIRController = (req: Request, res: Response) => {
   const tempPath = path.join(os.tmpdir(), `audio-${requestID}.wav`);
 
   try {
-    const result = getAudio({
+    const result = await getAudio({
       file,
       tempPath,
       executablePath,
@@ -140,7 +140,7 @@ const labIRController = (req: Request, res: Response) => {
   }
 };
 
-const customIRController = (req: Request, res: Response) => {
+const customIRController = async (req: Request, res: Response) => {
   const files = req.files as FilesType
 
   if (!files?.file?.[0] || !files?.ir?.[0]) {
@@ -157,10 +157,10 @@ const customIRController = (req: Request, res: Response) => {
   const tempPathIr = path.resolve(os.tmpdir(), `customir-${requestID}.wav`);
 
   //Escribir la ir
-  fs.writeFileSync(tempPathIr, customIr.buffer);
+  await fs.writeFile(tempPathIr, customIr.buffer);
 
   try {
-    const result = getAudio({
+    const result = await getAudio({
       file,
       tempPath,
       executablePath,
